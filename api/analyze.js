@@ -7,28 +7,28 @@ if (req.method === ‘OPTIONS’) return res.status(200).end();
 if (req.method !== ‘POST’) return res.status(405).json({ error: ‘Method not allowed’ });
 
 if (!process.env.ANTHROPIC_API_KEY) {
-return res.status(500).json({ error: ‘Clé API manquante dans Vercel Environment Variables’ });
+return res.status(500).json({ error: ‘ANTHROPIC_API_KEY manquante dans Vercel’ });
 }
 
 const { summary } = req.body || {};
 if (!summary) return res.status(400).json({ error: ‘Missing summary’ });
 
-const prompt = `Tu es un expert Ikigai. Analyse ces reponses et reponds UNIQUEMENT avec du JSON valide.
+const prompt = `Tu es un expert Ikigai. Analyse ces reponses et reponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou apres.
 
 REPONSES:
 ${summary}
 
-STRUCTURE JSON ATTENDUE:
+JSON:
 {
-“aime”:{“synthese”:“analyse 3 phrases”,“mots_cles”:[“a”,“b”,“c”,“d”,“e”]},
-“doue”:{“synthese”:“analyse 3 phrases”,“mots_cles”:[“a”,“b”,“c”,“d”,“e”]},
-“besoin”:{“synthese”:“analyse 3 phrases”,“mots_cles”:[“a”,“b”,“c”,“d”,“e”]},
-“remunere”:{“synthese”:“analyse 3 phrases”,“mots_cles”:[“a”,“b”,“c”,“d”,“e”]},
-“passion”:{“label”:“Passion”,“spheres”:“Aime + Done”,“analyse”:“analyse”,“note”:“ce qui manque”},
-“mission”:{“label”:“Mission”,“spheres”:“Aime + Besoin”,“analyse”:“analyse”,“note”:“ce qui manque”},
-“vocation”:{“label”:“Vocation”,“spheres”:“Done + Besoin”,“analyse”:“analyse”,“note”:“ce qui manque”},
-“profession”:{“label”:“Profession”,“spheres”:“Done + Remunere”,“analyse”:“analyse”,“note”:“ce qui manque”},
-“ikigai”:{“introduction”:“phrase poetique”,“points”:[“point1”,“point2”,“point3”],“invitation”:“invitation”}
+“aime”:{“synthese”:“3 phrases d analyse personnalisee”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},
+“doue”:{“synthese”:“3 phrases d analyse personnalisee”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},
+“besoin”:{“synthese”:“3 phrases d analyse personnalisee”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},
+“remunere”:{“synthese”:“3 phrases d analyse personnalisee”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},
+“passion”:{“label”:“Passion”,“spheres”:“Aime + Done”,“analyse”:“2 phrases”,“note”:“ce qui manque”},
+“mission”:{“label”:“Mission”,“spheres”:“Aime + Besoin”,“analyse”:“2 phrases”,“note”:“ce qui manque”},
+“vocation”:{“label”:“Vocation”,“spheres”:“Done + Besoin”,“analyse”:“2 phrases”,“note”:“ce qui manque”},
+“profession”:{“label”:“Profession”,“spheres”:“Done + Remunere”,“analyse”:“2 phrases”,“note”:“ce qui manque”},
+“ikigai”:{“introduction”:“phrase poetique personnalisee”,“points”:[“convergence 1”,“convergence 2”,“convergence 3”],“invitation”:“invitation finale inspirante”}
 }`;
 
 try {
@@ -40,7 +40,7 @@ headers: {
 ‘anthropic-version’: ‘2023-06-01’
 },
 body: JSON.stringify({
-model: ‘claude-sonnet-4-5’,
+model: ‘claude-3-5-sonnet-20241022’,
 max_tokens: 2000,
 messages: [
 { role: ‘user’, content: prompt },
@@ -50,19 +50,16 @@ messages: [
 });
 
 ```
-const responseText = await response.text();
+const raw = await response.text();
 
 if (!response.ok) {
-  return res.status(500).json({ 
-    error: 'Anthropic ' + response.status,
-    detail: responseText.slice(0, 300)
-  });
+  return res.status(500).json({ error: 'Anthropic ' + response.status, detail: raw.slice(0, 500) });
 }
 
-const data = JSON.parse(responseText);
+const data = JSON.parse(raw);
 const text = '{' + (data.content?.[0]?.text || '');
 const last = text.lastIndexOf('}');
-if (last === -1) return res.status(500).json({ error: 'JSON invalide', raw: text.slice(0, 200) });
+if (last === -1) return res.status(500).json({ error: 'Reponse invalide', raw: text.slice(0, 300) });
 
 const parsed = JSON.parse(text.slice(0, last + 1));
 return res.status(200).json(parsed);
