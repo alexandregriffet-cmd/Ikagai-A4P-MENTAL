@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
 res.setHeader(‘Access-Control-Allow-Origin’, ‘*’);
 res.setHeader(‘Access-Control-Allow-Methods’, ‘POST, OPTIONS’);
 res.setHeader(‘Access-Control-Allow-Headers’, ‘Content-Type’);
@@ -18,17 +18,17 @@ const prompt = `Tu es un expert Ikigai. Analyse ces reponses et reponds UNIQUEME
 REPONSES:
 ${summary}
 
-JSON:
+JSON attendu:
 {
-“aime”:{“synthese”:“3 phrases d analyse personnalisee”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},
-“doue”:{“synthese”:“3 phrases d analyse personnalisee”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},
-“besoin”:{“synthese”:“3 phrases d analyse personnalisee”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},
-“remunere”:{“synthese”:“3 phrases d analyse personnalisee”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},
+“aime”:{“synthese”:“3 phrases personnalisees”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},
+“doue”:{“synthese”:“3 phrases personnalisees”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},
+“besoin”:{“synthese”:“3 phrases personnalisees”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},
+“remunere”:{“synthese”:“3 phrases personnalisees”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},
 “passion”:{“label”:“Passion”,“spheres”:“Aime + Done”,“analyse”:“2 phrases”,“note”:“ce qui manque”},
 “mission”:{“label”:“Mission”,“spheres”:“Aime + Besoin”,“analyse”:“2 phrases”,“note”:“ce qui manque”},
 “vocation”:{“label”:“Vocation”,“spheres”:“Done + Besoin”,“analyse”:“2 phrases”,“note”:“ce qui manque”},
 “profession”:{“label”:“Profession”,“spheres”:“Done + Remunere”,“analyse”:“2 phrases”,“note”:“ce qui manque”},
-“ikigai”:{“introduction”:“phrase poetique personnalisee”,“points”:[“convergence 1”,“convergence 2”,“convergence 3”],“invitation”:“invitation finale inspirante”}
+“ikigai”:{“introduction”:“phrase poetique”,“points”:[“point1”,“point2”,“point3”],“invitation”:“invitation finale”}
 }`;
 
 try {
@@ -68,4 +68,4 @@ return res.status(200).json(parsed);
 } catch (e) {
 return res.status(500).json({ error: e.message });
 }
-}
+};
