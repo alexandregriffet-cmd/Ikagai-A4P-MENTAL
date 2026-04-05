@@ -1,0 +1,487 @@
+import { useState, useEffect } from “react”;
+
+const COLORS = {
+aime: “#E8956A”, doue: “#5DA898”, besoin: “#8B7AB5”, remunere: “#C4985A”,
+passion: “#D4896A”, mission: “#9B87BC”, vocation: “#6DADA0”, profession: “#BF9A5E”,
+ikigai: “#B07D5A”, a4p: “#6B8FAD”,
+bg: “#F7F4EF”, card: “#FFFFFF”, text: “#2C2A26”, muted: “#8A8070”, border: “#DDD8CE”
+};
+
+const QQ = [
+{s:‘aime’,l:‘Ce que vous aimez’,t:“Quand vous perdez la notion du temps, qu’êtes-vous en train de faire ?”,h:“Activités qui vous absorbent complètement, sans effort apparent.”,tp:‘ta’},
+{s:‘aime’,l:‘Ce que vous aimez’,t:“Quelles activités vous ont fasciné depuis l’enfance ?”,h:“Laissez remonter les souvenirs sans les censurer.”,tp:‘ta’},
+{s:‘aime’,l:‘Ce que vous aimez’,t:“Sans contrainte, comment occuperiez-vous votre temps ?”,h:“Argent et regard des autres ne comptent pas.”,tp:‘ta’},
+{s:‘aime’,l:‘Ce que vous aimez’,t:“Quels sujets pouvez-vous aborder pendant des heures ?”,h:“Avec des amis, en famille, ou avec des inconnus.”,tp:‘ta’},
+{s:‘aime’,l:‘Ce que vous aimez’,t:“Degré d’exploration de vos passions dans votre vie actuelle ?”,h:“1 = pas du tout exploré · 10 = totalement intégré”,tp:‘sc’},
+{s:‘doue’,l:‘Ce pour quoi vous êtes doué’,t:“Pour quoi les autres vous sollicitent-ils naturellement ?”,h:“Collègues, amis, famille — votre réputation spontanée.”,tp:‘ta’},
+{s:‘doue’,l:‘Ce pour quoi vous êtes doué’,t:“Quelles compétences vous semblent évidentes mais impressionnent les autres ?”,h:“Ce qui vous paraît naturel peut être un don rare.”,tp:‘ta’},
+{s:‘doue’,l:‘Ce pour quoi vous êtes doué’,t:“Dans quels domaines avez-vous reçu des compliments répétés ?”,h:“Au travail, dans vos loisirs, dans vos relations…”,tp:‘ta’},
+{s:‘doue’,l:‘Ce pour quoi vous êtes doué’,t:“Quelles épreuves vous ont rendu plus compétent ou plus sage ?”,h:“Les épreuves forgent souvent nos plus grandes forces.”,tp:‘ta’},
+{s:‘doue’,l:‘Ce pour quoi vous êtes doué’,t:“Degré d’exploitation de vos talents dans votre vie actuelle ?”,h:“1 = talents sous-utilisés · 10 = je vis pleinement de mes forces”,tp:‘sc’},
+{s:‘besoin’,l:‘Ce dont le monde a besoin’,t:“Quel problème vous touche profondément et vous motive à agir ?”,h:“Qu’est-ce qui ne devrait pas exister ? Qu’est-ce qui manque ?”,tp:‘ta’},
+{s:‘besoin’,l:‘Ce dont le monde a besoin’,t:“Si vous pouviez changer une chose dans votre entourage, laquelle ?”,h:“Pensez à votre cercle proche avant d’élargir.”,tp:‘ta’},
+{s:‘besoin’,l:‘Ce dont le monde a besoin’,t:“Quelle aide apportez-vous naturellement avec le plus d’impact ?”,h:“Ce que vous donnez sans effort et qui transforme les personnes.”,tp:‘ta’},
+{s:‘besoin’,l:‘Ce dont le monde a besoin’,t:“Quelle population aimeriez-vous servir ou accompagner ?”,h:“Sportifs, entrepreneurs, enfants… laissez-vous guider.”,tp:‘ta’},
+{s:‘besoin’,l:‘Ce dont le monde a besoin’,t:“Degré de contribution de votre activité à quelque chose de plus grand ?”,h:“1 = je ne vois pas l’impact · 10 = je sens ma contribution”,tp:‘sc’},
+{s:‘remunere’,l:‘Ce pour quoi vous êtes rémunéré’,t:“Pour quoi des personnes ont-elles déjà payé vos services ?”,h:“Même modestement, même indirectement.”,tp:‘ta’},
+{s:‘remunere’,l:‘Ce pour quoi vous êtes rémunéré’,t:“Dans quel domaine pourriez-vous créer de la valeur économique ?”,h:“Conseil, création, enseignement, prestation…”,tp:‘ta’},
+{s:‘remunere’,l:‘Ce pour quoi vous êtes rémunéré’,t:“Quel modèle économique est compatible avec vos valeurs ?”,h:“Argent et sens ne s’opposent pas.”,tp:‘ta’},
+{s:‘remunere’,l:‘Ce pour quoi vous êtes rémunéré’,t:“Quels sont vos freins à monétiser vos compétences ?”,h:“Croyances, peur du regard, manque de structure…”,tp:‘ta’},
+{s:‘remunere’,l:‘Ce pour quoi vous êtes rémunéré’,t:“Degré d’aise avec l’idée de vivre économiquement de votre passion ?”,h:“1 = impossible · 10 = j’y suis presque ou prêt”,tp:‘sc’},
+];
+
+const TEST_ANSWERS = [
+“Je perds la notion du temps quand je coache des sportifs mentalement et quand je crée des outils pédagogiques de performance.”,
+“Depuis l’enfance je suis fasciné par la psychologie, la performance sportive et le fonctionnement du cerveau sous pression.”,
+“Je passerais mes journées à accompagner des athlètes et créer des méthodes de préparation mentale innovantes.”,
+“Je peux parler de neurosciences, de performance mentale et de développement personnel pendant des heures.”,
+8,
+“Les autres me demandent naturellement de les aider à gérer le stress, reprendre confiance et se préparer mentalement.”,
+“Comprendre rapidement la psychologie d’une personne, créer des protocoles adaptés, expliquer des concepts complexes simplement.”,
+“On me dit souvent que j’ai un don pour écouter, analyser et donner des outils concrets qui changent la vie.”,
+“Une période difficile personnelle m’a rendu bien plus empathique et expert dans l’accompagnement des crises de confiance.”,
+7,
+“Le manque de préparation mentale dans le sport m’est insupportable — des talents gâchés par la pression alors que les outils existent.”,
+“Je changerais le fait que la préparation mentale est encore trop négligée dans le sport professionnel.”,
+“J’aide naturellement les gens à transformer leurs blocages en leviers et à voir les crises comme des opportunités.”,
+“Les sportifs de haut niveau, les centres de formation, et toute personne voulant performer sous pression.”,
+8,
+“Des clubs sportifs ont payé mes interventions, des particuliers pour du coaching individuel de performance.”,
+“Conférences, coaching individuel premium, formations pour staffs sportifs, programmes digitaux.”,
+“Un modèle hybride : accompagnements individuels premium + formations collectives + outils digitaux.”,
+“Mon frein principal est la visibilité et la prospection — je sais faire mais je dois mieux me vendre.”,
+8
+];
+
+// ── STYLES ──
+const S = {
+body: { fontFamily: “‘DM Sans’, sans-serif”, background: COLORS.bg, color: COLORS.text, minHeight: “100vh”, margin: 0, padding: 0 },
+hdr: { position: “fixed”, top: 0, left: 0, right: 0, background: “rgba(247,244,239,.97)”, borderBottom: `1px solid ${COLORS.border}`, padding: “10px 20px”, display: “flex”, alignItems: “center”, zIndex: 100, backdropFilter: “blur(8px)” },
+logoTxt: { fontSize: 13, fontWeight: 600, color: COLORS.a4p, letterSpacing: “.04em” },
+hdrTitle: { marginLeft: “auto”, fontFamily: “‘Playfair Display’,serif”, fontSize: 15, fontStyle: “italic”, color: COLORS.muted },
+prog: { position: “fixed”, top: 0, left: 0, right: 0, height: 3, background: COLORS.border, zIndex: 200 },
+screen: { maxWidth: 640, margin: “0 auto”, padding: “76px 20px 60px”, minHeight: “100vh”, display: “flex”, flexDirection: “column” },
+btn: { background: COLORS.a4p, border: “none”, color: “#fff”, padding: “14px 32px”, fontFamily: “inherit”, fontSize: 12, letterSpacing: “.18em”, textTransform: “uppercase”, cursor: “pointer”, borderRadius: 100, fontWeight: 500 },
+btnGhost: { background: “transparent”, border: `1.5px solid ${COLORS.border}`, color: COLORS.muted, padding: “8px 18px”, fontFamily: “inherit”, fontSize: 11, letterSpacing: “.15em”, textTransform: “uppercase”, cursor: “pointer”, borderRadius: 100 },
+btnTest: { background: “transparent”, border: `1.5px solid ${COLORS.remunere}`, color: COLORS.remunere, padding: “8px 18px”, fontFamily: “inherit”, fontSize: 11, letterSpacing: “.12em”, textTransform: “uppercase”, cursor: “pointer”, borderRadius: 100 },
+card: { background: COLORS.card, borderRadius: 14, padding: 20, border: `1px solid ${COLORS.border}`, marginBottom: 12 },
+ikBox: { background: “linear-gradient(135deg,#FBF7F2,#F5EEE6)”, border: `1.5px solid rgba(176,125,90,.2)`, borderRadius: 20, padding: 28, marginBottom: 28 },
+textarea: { width: “100%”, background: COLORS.card, border: `1.5px solid ${COLORS.border}`, borderRadius: 12, color: COLORS.text, fontFamily: “inherit”, fontSize: 15, lineHeight: 1.7, padding: “16px 18px”, resize: “none”, minHeight: 130, outline: “none”, boxSizing: “border-box” },
+scBtn: (sel) => ({ width: 44, height: 44, border: `1.5px solid ${sel ? COLORS.a4p : COLORS.border}`, background: sel ? COLORS.a4p : COLORS.card, color: sel ? “#fff” : COLORS.muted, fontFamily: “inherit”, fontSize: 15, borderRadius: 10, cursor: “pointer”, margin: “0 4px 4px 0” }),
+};
+
+export default function App() {
+const [screen, setScreen] = useState(“intro”); // intro | question | loading | results
+const [idx, setIdx] = useState(0);
+const [answers, setAnswers] = useState({});
+const [data, setData] = useState(null);
+const [progress, setProgress] = useState(0);
+const [loadMsg, setLoadMsg] = useState(“Exploration des sphères…”);
+const [activeZone, setActiveZone] = useState(“ikigai”);
+const [error, setError] = useState(null);
+
+useEffect(() => {
+setProgress(screen === “results” ? 100 : screen === “loading” ? 92 : Math.round(idx / QQ.length * 100));
+}, [screen, idx]);
+
+useEffect(() => {
+if (screen !== “loading”) return;
+const msgs = [“Exploration des sphères…”, “Identification des croisements…”, “Synthèse des convergences…”, “Révélation de votre ikigaï…”];
+let i = 0;
+const iv = setInterval(() => { i = (i + 1) % msgs.length; setLoadMsg(msgs[i]); }, 2000);
+return () => clearInterval(iv);
+}, [screen]);
+
+const startTest = () => {
+const a = {};
+TEST_ANSWERS.forEach((v, i) => a[i] = v);
+setAnswers(a);
+setScreen(“loading”);
+callAPI(a);
+};
+
+const buildSummary = (ans) => {
+const labs = { aime: “Ce que vous aimez”, doue: “Ce pour quoi vous êtes doué”, besoin: “Ce dont le monde a besoin”, remunere: “Ce pour quoi vous êtes rémunéré” };
+let s = “”;
+[“aime”, “doue”, “besoin”, “remunere”].forEach(sp => {
+s += `\n## ${labs[sp]}\n`;
+QQ.forEach((q, i) => { if (q.s === sp && ans[i]) s += `Q: ${q.t}\nR: ${ans[i]}\n\n`; });
+});
+return s;
+};
+
+const callAPI = async (ans) => {
+setError(null);
+const prompt = `Tu es un expert Ikigaï et coach de performance mentale.
+
+Voici les réponses d’une personne :
+${buildSummary(ans)}
+
+Réponds UNIQUEMENT en JSON valide. Commence par { et termine par }. Aucun texte avant ou après.
+
+{“aime”:{“synthese”:“3-4 phrases personnalisées”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},“doue”:{“synthese”:“3-4 phrases”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},“besoin”:{“synthese”:“3-4 phrases”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},“remunere”:{“synthese”:“3-4 phrases”,“mots_cles”:[“mot1”,“mot2”,“mot3”,“mot4”,“mot5”]},“passion”:{“label”:“Passion”,“spheres”:“Aime + Doué”,“analyse”:“2-3 phrases précises”,“note”:“Ce qui manque encore”},“mission”:{“label”:“Mission”,“spheres”:“Aime + Besoin”,“analyse”:“2-3 phrases précises”,“note”:“Ce qui manque encore”},“vocation”:{“label”:“Vocation”,“spheres”:“Doué + Besoin”,“analyse”:“2-3 phrases précises”,“note”:“Ce qui manque encore”},“profession”:{“label”:“Profession”,“spheres”:“Doué + Rémunéré”,“analyse”:“2-3 phrases précises”,“note”:“Ce qui manque encore”},“ikigai”:{“introduction”:“Une phrase poétique personnalisée”,“points”:[“Convergence 1 concrète”,“Convergence 2 concrète”,“Convergence 3 concrète”],“invitation”:“Invitation finale inspirante”}}`;
+
+```
+try {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "anthropic-dangerous-direct-browser-access": "true" },
+    body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1500, system: "Réponds UNIQUEMENT en JSON pur valide. Commence par { et termine par }. Aucun texte en dehors du JSON.", messages: [{ role: "user", content: prompt }] })
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const raw = await res.json();
+  const txt = raw.content?.[0]?.text || "";
+  const f = txt.indexOf("{"), l = txt.lastIndexOf("}");
+  if (f === -1 || l === -1) throw new Error("No JSON found");
+  const parsed = JSON.parse(txt.slice(f, l + 1));
+  setData(parsed);
+  setScreen("results");
+  setActiveZone("ikigai");
+} catch (e) {
+  setError(e.message);
+  setScreen("loading");
+}
+```
+
+};
+
+const goNext = () => {
+const q = QQ[idx];
+if (q.tp === “ta” && !answers[idx]?.trim()) return;
+if (q.tp === “sc” && !answers[idx]) return;
+if (idx === QQ.length - 1) { setScreen(“loading”); callAPI(answers); }
+else setIdx(i => i + 1);
+};
+
+const goPrev = () => { if (idx > 0) setIdx(i => i - 1); };
+
+const setAns = (v) => setAnswers(a => ({ …a, [idx]: v }));
+
+const restart = () => { setAnswers({}); setIdx(0); setData(null); setError(null); setScreen(“intro”); };
+
+// ── VENN SVG ──
+const VennDiagram = () => (
+<svg viewBox=“0 0 150 150” style={{ width: 150, height: 150 }}>
+<circle cx="63" cy="60" r="42" fill={COLORS.aime} opacity=".2" />
+<circle cx="87" cy="60" r="42" fill={COLORS.besoin} opacity=".2" />
+<circle cx="63" cy="88" r="42" fill={COLORS.doue} opacity=".2" />
+<circle cx="87" cy="88" r="42" fill={COLORS.remunere} opacity=".2" />
+<circle cx="75" cy="74" r="15" fill={COLORS.ikigai} opacity=".15" />
+<text x="75" y="78" textAnchor="middle" fontFamily="Georgia,serif" fontSize="9" fill="#8A7060" fontStyle="italic">ikigaï</text>
+</svg>
+);
+
+// ── INTERACTIVE IKIGAI DIAGRAM ──
+const IkigaiDiagram = () => {
+const zones = [
+{ id: “aime”, label: “J’Aime”, cx: 75, cy: 75, r: 58, color: COLORS.aime },
+{ id: “doue”, label: “Doué”, cx: 125, cy: 75, r: 58, color: COLORS.doue },
+{ id: “besoin”, label: “Besoin”, cx: 75, cy: 125, r: 58, color: COLORS.besoin },
+{ id: “remunere”, label: “Rémunéré”, cx: 125, cy: 125, r: 58, color: COLORS.remunere },
+];
+const crosses = [
+{ id: “passion”, label: “Passion”, x: 100, y: 68, color: COLORS.passion },
+{ id: “mission”, label: “Mission”, x: 62, y: 100, color: COLORS.mission },
+{ id: “profession”, label: “Profession”, x: 138, y: 100, color: COLORS.profession },
+{ id: “vocation”, label: “Vocation”, x: 100, y: 132, color: COLORS.vocation },
+];
+return (
+<div>
+<svg viewBox=“0 0 200 200” style={{ width: “100%”, maxWidth: 400, display: “block”, margin: “0 auto” }}>
+{zones.map(z => (
+<circle key={z.id} cx={z.cx} cy={z.cy} r={z.r} fill={z.color} opacity={activeZone === z.id ? “.35” : “.16”}
+style={{ cursor: “pointer”, transition: “opacity .3s” }} onClick={() => setActiveZone(z.id)} />
+))}
+{/* Labels sphères */}
+<text x="42" y="36" fill={COLORS.aime} fontSize="7" fontWeight="600" textAnchor="middle">Ce que</text>
+<text x="42" y="44" fill={COLORS.aime} fontSize="7" fontWeight="600" textAnchor="middle">j’Aime</text>
+<text x="158" y="36" fill={COLORS.doue} fontSize="7" fontWeight="600" textAnchor="middle">Doué</text>
+<text x="42" y="165" fill={COLORS.besoin} fontSize="7" fontWeight="600" textAnchor="middle">Besoin</text>
+<text x="158" y="165" fill={COLORS.remunere} fontSize="7" fontWeight="600" textAnchor="middle">Rémunéré</text>
+{/* Intersections cliquables */}
+{crosses.map(c => (
+<g key={c.id} style={{ cursor: “pointer” }} onClick={() => setActiveZone(c.id)}>
+<text x={c.x} y={c.y + 3} fill={c.color} fontSize=“8” fontStyle=“italic” textAnchor=“middle”
+fontWeight={activeZone === c.id ? “600” : “400”} opacity={activeZone === c.id ? 1 : .75}>{c.label}</text>
+</g>
+))}
+{/* Centre ikigaï */}
+<circle cx=“100” cy=“100” r=“16” fill={COLORS.ikigai} opacity={activeZone === “ikigai” ? “.35” : “.2”}
+style={{ cursor: “pointer”, transition: “opacity .3s” }} onClick={() => setActiveZone(“ikigai”)} />
+<text x=“100” y=“97” textAnchor=“middle” fontFamily=“Georgia,serif” fontSize=“9” fill={COLORS.ikigai} fontStyle=“italic”
+style={{ cursor: “pointer” }} onClick={() => setActiveZone(“ikigai”)}>ikigaï</text>
+<text x=“100” y=“107” textAnchor=“middle” fontSize=“6.5” fill={COLORS.ikigai} opacity=”.6”
+style={{ cursor: “pointer” }} onClick={() => setActiveZone(“ikigai”)}>↑ touchez</text>
+</svg>
+
+```
+    {/* Nav buttons */}
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 16, justifyContent: "center" }}>
+      {[{ id: "ikigai", label: "✦ Ikigaï" }, { id: "aime", label: "Aime" }, { id: "doue", label: "Doué" },
+        { id: "besoin", label: "Besoin" }, { id: "remunere", label: "Rémunéré" },
+        { id: "passion", label: "Passion" }, { id: "mission", label: "Mission" },
+        { id: "vocation", label: "Vocation" }, { id: "profession", label: "Profession" }
+      ].map(z => (
+        <button key={z.id} onClick={() => setActiveZone(z.id)} style={{
+          fontSize: 11, padding: "4px 12px", borderRadius: 100,
+          border: `1px solid ${activeZone === z.id ? COLORS.a4p : COLORS.border}`,
+          background: activeZone === z.id ? COLORS.a4p : "transparent",
+          color: activeZone === z.id ? "#fff" : COLORS.muted,
+          cursor: "pointer", fontFamily: "inherit"
+        }}>{z.label}</button>
+      ))}
+    </div>
+
+    {/* Zone detail */}
+    <ZoneDetail zone={activeZone} />
+  </div>
+);
+```
+
+};
+
+const ZoneDetail = ({ zone }) => {
+if (!data) return null;
+const col = COLORS[zone] || COLORS.ikigai;
+const sphereNames = { aime: “Ce que vous Aimez”, doue: “Ce pour quoi vous êtes Doué”, besoin: “Ce dont le Monde a Besoin”, remunere: “Ce pour quoi vous êtes Rémunéré” };
+const sphereSubs = { aime: “Passion · Épanouissement”, doue: “Talents · Forces”, besoin: “Contribution · Impact”, remunere: “Valeur · Économie” };
+const d = data[zone] || {};
+
+```
+return (
+  <div style={{ background: "#F2EDE8", borderRadius: 14, padding: 18, marginTop: 16 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+      <div style={{ width: 8, height: 8, borderRadius: "50%", background: col }} />
+      <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".15em", textTransform: "uppercase", color: col }}>
+        {zone === "ikigai" ? "✦ Votre Ikigaï" : d.spheres || sphereSubs[zone] || zone}
+      </span>
+    </div>
+
+    {zone === "ikigai" ? (
+      <>
+        <p style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontStyle: "italic", lineHeight: 1.7, color: COLORS.text, marginBottom: 14 }}>{d.introduction}</p>
+        {(d.points || []).map((p, i) => (
+          <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: `1px solid rgba(176,125,90,.1)` }}>
+            <div style={{ width: 22, height: 22, background: col, color: "#fff", borderRadius: "50%", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>{i + 1}</div>
+            <p style={{ fontSize: 14, lineHeight: 1.65, color: COLORS.text, fontWeight: 300, margin: 0 }}>{p}</p>
+          </div>
+        ))}
+        {d.invitation && <div style={{ marginTop: 14, fontFamily: "'Playfair Display',serif", fontSize: 15, fontStyle: "italic", color: col, textAlign: "center", padding: 14, background: "rgba(176,125,90,.07)", borderRadius: 10 }}>{d.invitation}</div>}
+      </>
+    ) : ["aime", "doue", "besoin", "remunere"].includes(zone) ? (
+      <>
+        <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 17, color: COLORS.text, marginBottom: 8 }}>{sphereNames[zone]}</h3>
+        <p style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.muted, fontWeight: 300, margin: 0 }}>{d.synthese}</p>
+        {d.mots_cles && <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 10 }}>
+          {d.mots_cles.map((k, i) => <span key={i} style={{ background: col + "20", borderRadius: 4, padding: "2px 8px", fontSize: 11, color: col }}>{k}</span>)}
+        </div>}
+      </>
+    ) : (
+      <>
+        <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 17, color: COLORS.text, marginBottom: 8 }}>{d.label}</h3>
+        <p style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.muted, fontWeight: 300, margin: 0 }}>{d.analyse}</p>
+        {d.note && <p style={{ fontSize: 12, fontStyle: "italic", color: "#BDB8AE", marginTop: 8, paddingTop: 8, borderTop: `1px solid ${COLORS.border}` }}>⚡ {d.note}</p>}
+      </>
+    )}
+  </div>
+);
+```
+
+};
+
+// ── SCREENS ──
+if (screen === “intro”) return (
+<div style={S.body}>
+<div style={S.hdr}>
+<span style={{ …S.logoTxt, fontFamily: “inherit” }}>⬡ A4P Mental</span>
+<span style={S.hdrTitle}>Ikigaï</span>
+</div>
+<div style={{ …S.screen, justifyContent: “center”, alignItems: “center”, textAlign: “center”, gap: 22 }}>
+<VennDiagram />
+<div style={{ fontFamily: “‘Playfair Display’,serif”, fontSize: “clamp(42px,10vw,60px)”, fontWeight: 400, color: COLORS.ikigai, lineHeight: 1 }}>Ikigaï</div>
+<div style={{ fontSize: 11, letterSpacing: “.22em”, textTransform: “uppercase”, color: COLORS.a4p, fontWeight: 500 }}>Raison d’être · A4P Mental</div>
+<div style={{ fontFamily: “‘Playfair Display’,serif”, fontSize: 15, color: COLORS.muted, fontStyle: “italic”, lineHeight: 1.75, maxWidth: 360 }}>
+Un voyage intérieur pour révéler la convergence unique où vos talents, vos passions, votre utilité et votre potentiel économique se rencontrent.
+</div>
+<div style={{ display: “flex”, flexDirection: “column”, alignItems: “center”, gap: 10 }}>
+<button style={S.btn} onClick={() => { setIdx(0); setScreen(“question”); }}>Commencer l’exploration</button>
+<button style={S.btnTest} onClick={startTest}>⚡ Test rapide (démo sans questions)</button>
+</div>
+<div style={{ fontSize: 12, color: COLORS.muted }}>20 questions · environ 15 minutes</div>
+</div>
+</div>
+);
+
+if (screen === “question”) {
+const q = QQ[idx];
+const col = COLORS[q.s];
+return (
+<div style={S.body}>
+<div style={S.hdr}>
+<span style={{ …S.logoTxt }}>⬡ A4P Mental</span>
+<span style={S.hdrTitle}>Ikigaï</span>
+</div>
+<div style={S.prog}><div style={{ height: 3, background: `linear-gradient(90deg,${COLORS.a4p},${COLORS.ikigai})`, width: `${progress}%`, transition: “width .5s” }} /></div>
+<div style={S.screen}>
+<div style={{ display: “flex”, alignItems: “center”, gap: 10, marginBottom: 28 }}>
+<div style={{ width: 10, height: 10, borderRadius: “50%”, background: col }} />
+<span style={{ fontSize: 11, letterSpacing: “.2em”, textTransform: “uppercase”, color: COLORS.muted, fontWeight: 500 }}>{q.l}</span>
+<span style={{ marginLeft: “auto”, fontSize: 12, color: COLORS.muted, background: “#EEE9E0”, padding: “3px 10px”, borderRadius: 100 }}>{idx + 1} / {QQ.length}</span>
+</div>
+<div style={{ fontSize: 11, letterSpacing: “.12em”, color: COLORS.muted, marginBottom: 8, textTransform: “uppercase” }}>Question {idx + 1}</div>
+<div style={{ fontFamily: “‘Playfair Display’,serif”, fontSize: “clamp(18px,4vw,26px)”, lineHeight: 1.45, color: COLORS.text, marginBottom: 8 }}>{q.t}</div>
+<div style={{ fontSize: 13, color: COLORS.muted, fontStyle: “italic”, marginBottom: 22, lineHeight: 1.6 }}>{q.h}</div>
+
+```
+      {q.tp === "ta" ? (
+        <textarea style={S.textarea} placeholder="Votre réponse…" value={answers[idx] || ""}
+          onChange={e => setAns(e.target.value)} rows={5} />
+      ) : (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {[1,2,3,4,5,6,7,8,9,10].map(n => (
+            <button key={n} style={S.scBtn(answers[idx] === n)} onClick={() => setAns(n)}>{n}</button>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
+        <button style={{ ...S.btnGhost, visibility: idx === 0 ? "hidden" : "visible" }} onClick={goPrev}>← Retour</button>
+        <button style={S.btn} onClick={goNext}>{idx === QQ.length - 1 ? "Analyser mon Ikigaï ✦" : "Suivant →"}</button>
+      </div>
+    </div>
+  </div>
+);
+```
+
+}
+
+if (screen === “loading”) return (
+<div style={{ …S.body, display: “flex”, alignItems: “center”, justifyContent: “center”, minHeight: “100vh” }}>
+<div style={{ textAlign: “center”, padding: 40 }}>
+<div style={{ width: 60, height: 60, border: `2px solid ${COLORS.border}`, borderTopColor: COLORS.a4p, borderRadius: “50%”, animation: “spin 1.2s linear infinite”, margin: “0 auto 28px” }} />
+<div style={{ fontFamily: “‘Playfair Display’,serif”, fontSize: 19, fontStyle: “italic”, color: COLORS.muted, marginBottom: 12 }}>Analyse de votre ikigaï…</div>
+{error ? (
+<div style={{ color: “#C06060”, fontSize: 14, maxWidth: 320, margin: “0 auto” }}>
+<p>Erreur : {error}</p>
+<button style={{ …S.btn, marginTop: 16 }} onClick={() => callAPI(answers)}>Réessayer</button>
+</div>
+) : (
+<div style={{ fontSize: 12, color: “#C0BAB0”, letterSpacing: “.12em”, textTransform: “uppercase” }}>{loadMsg}</div>
+)}
+<style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+</div>
+</div>
+);
+
+if (screen === “results” && data) {
+const spheres = [
+{ k: “aime”, c: COLORS.aime, t: “Ce que vous Aimez”, s: “Passion · Épanouissement” },
+{ k: “doue”, c: COLORS.doue, t: “Ce pour quoi vous êtes Doué”, s: “Talents · Forces” },
+{ k: “besoin”, c: COLORS.besoin, t: “Ce dont le Monde a Besoin”, s: “Contribution · Impact” },
+{ k: “remunere”, c: COLORS.remunere, t: “Ce pour quoi vous êtes Rémunéré”, s: “Valeur · Économie” },
+];
+const ints = [“passion”, “mission”, “vocation”, “profession”];
+
+```
+return (
+  <div style={S.body}>
+    <div style={S.hdr}>
+      <span style={S.logoTxt}>⬡ A4P Mental</span>
+      <span style={S.hdrTitle}>Ikigaï</span>
+    </div>
+    <div style={S.prog}><div style={{ height: 3, background: `linear-gradient(90deg,${COLORS.a4p},${COLORS.ikigai})`, width: "100%" }} /></div>
+    <div style={{ ...S.screen }}>
+      {/* HERO */}
+      <div style={{ textAlign: "center", padding: "28px 0 24px", borderBottom: `1px solid ${COLORS.border}`, marginBottom: 28 }}>
+        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: "clamp(30px,8vw,48px)", fontWeight: 400, color: COLORS.ikigai, marginBottom: 6 }}>Votre Ikigaï</h1>
+        <p style={{ fontSize: 11, color: COLORS.muted, letterSpacing: ".1em", textTransform: "uppercase" }}>Analyse personnalisée · A4P Mental</p>
+      </div>
+
+      {/* DIAGRAMME INTERACTIF */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontSize: 10, letterSpacing: ".28em", textTransform: "uppercase", color: COLORS.muted, marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+          Le diagramme de votre Ikigaï
+          <div style={{ flex: 1, height: 1, background: COLORS.border }} />
+        </div>
+        <div style={{ background: COLORS.card, borderRadius: 20, border: `1px solid ${COLORS.border}`, padding: "20px 16px" }}>
+          <IkigaiDiagram />
+        </div>
+      </div>
+
+      {/* IKIGAI PRINCIPAL */}
+      <div style={{ fontSize: 10, letterSpacing: ".28em", textTransform: "uppercase", color: COLORS.muted, marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+        Synthèse complète
+        <div style={{ flex: 1, height: 1, background: COLORS.border }} />
+      </div>
+      <div style={S.ikBox}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <span style={{ fontSize: 18, color: COLORS.ikigai }}>✦</span>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 600, color: COLORS.ikigai }}>Votre Ikigaï</h2>
+        </div>
+        <p style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontStyle: "italic", lineHeight: 1.7, color: COLORS.text, marginBottom: 18, paddingBottom: 14, borderBottom: `1px solid rgba(176,125,90,.15)` }}>{data.ikigai?.introduction}</p>
+        <div style={{ fontSize: 11, letterSpacing: ".15em", textTransform: "uppercase", color: COLORS.ikigai, marginBottom: 12, fontWeight: 500 }}>Vos points de convergence</div>
+        {(data.ikigai?.points || []).map((p, i) => (
+          <div key={i} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: `1px solid rgba(176,125,90,.1)` }}>
+            <div style={{ width: 24, height: 24, background: COLORS.ikigai, color: "#fff", borderRadius: "50%", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{i + 1}</div>
+            <p style={{ fontSize: 14, lineHeight: 1.65, color: COLORS.text, fontWeight: 300, margin: 0 }}>{p}</p>
+          </div>
+        ))}
+        {data.ikigai?.invitation && <div style={{ marginTop: 18, fontFamily: "'Playfair Display',serif", fontSize: 15, fontStyle: "italic", color: COLORS.ikigai, textAlign: "center", padding: "14px", background: "rgba(176,125,90,.06)", borderRadius: 10 }}>{data.ikigai.invitation}</div>}
+      </div>
+
+      {/* 4 SPHÈRES */}
+      <div style={{ fontSize: 10, letterSpacing: ".28em", textTransform: "uppercase", color: COLORS.muted, marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+        Les quatre sphères<div style={{ flex: 1, height: 1, background: COLORS.border }} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 28 }}>
+        {spheres.map(sp => {
+          const sd = data[sp.k] || {};
+          return (
+            <div key={sp.k} style={{ ...S.card, paddingTop: 18, position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: sp.c, borderRadius: "14px 14px 0 0" }} />
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 14, color: COLORS.text, marginBottom: 2, marginTop: 6 }}>{sp.t}</div>
+              <div style={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: COLORS.muted, marginBottom: 8 }}>{sp.s}</div>
+              <p style={{ fontSize: 13, lineHeight: 1.7, color: COLORS.muted, fontWeight: 300, margin: 0 }}>{sd.synthese}</p>
+              {sd.mots_cles && <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
+                {sd.mots_cles.map((k, i) => <span key={i} style={{ background: "#EEE9E0", borderRadius: 4, padding: "2px 7px", fontSize: 11, color: COLORS.muted }}>{k}</span>)}
+              </div>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* CROISEMENTS */}
+      <div style={{ fontSize: 10, letterSpacing: ".28em", textTransform: "uppercase", color: COLORS.muted, marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+        Les quatre croisements<div style={{ flex: 1, height: 1, background: COLORS.border }} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 32 }}>
+        {ints.map(k => {
+          const id = data[k] || {};
+          const col = COLORS[k];
+          return (
+            <div key={k} style={S.card}>
+              <div style={{ display: "inline-block", fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", padding: "3px 9px", borderRadius: 100, background: col + "18", color: col, marginBottom: 8, fontWeight: 500 }}>{id.label || k}</div>
+              <div style={{ fontSize: 10, color: COLORS.muted, letterSpacing: ".07em", marginBottom: 6 }}>{id.spheres}</div>
+              <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 15, color: COLORS.text, marginBottom: 7 }}>{id.label || k}</h3>
+              <p style={{ fontSize: 13, lineHeight: 1.7, color: COLORS.muted, fontWeight: 300, margin: 0 }}>{id.analyse}</p>
+              {id.note && <p style={{ fontSize: 12, fontStyle: "italic", color: "#BDB8AE", marginTop: 7 }}>⚡ {id.note}</p>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* RESTART */}
+      <div style={{ textAlign: "center", paddingTop: 28, borderTop: `1px solid ${COLORS.border}` }}>
+        <p style={{ fontFamily: "'Playfair Display',serif", fontSize: 14, color: COLORS.muted, fontStyle: "italic", marginBottom: 16 }}>« Le voyage vers soi-même n'a pas de fin. »</p>
+        <button style={S.btnGhost} onClick={restart}>Recommencer</button>
+      </div>
+      <div style={{ textAlign: "center", padding: 14, fontSize: 11, color: "#C0BAB0", letterSpacing: ".1em" }}>A4P Mental — Alexandre Griffet · Architecte Mental</div>
+    </div>
+  </div>
+);
+```
+
+}
+
+return null;
+}
