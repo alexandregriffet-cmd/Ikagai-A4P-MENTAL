@@ -9,13 +9,63 @@ module.exports = async function handler(req, res) {
   const { summary } = req.body || {};
   if (!summary) return res.status(400).json({ error: 'Missing summary' });
 
-  const prompt = `Tu es un expert Ikigai. Analyse ces reponses et reponds UNIQUEMENT avec du JSON valide.
+  const prompt = `Tu es un expert Ikigai et coach de performance mentale. Analyse ces reponses de facon profonde et personnalisee.
 
-REPONSES:
+REPONSES DU CLIENT:
 ${summary}
 
-JSON:
-{"aime":{"synthese":"3 phrases personnalisees","mots_cles":["mot1","mot2","mot3","mot4","mot5"]},"doue":{"synthese":"3 phrases personnalisees","mots_cles":["mot1","mot2","mot3","mot4","mot5"]},"besoin":{"synthese":"3 phrases personnalisees","mots_cles":["mot1","mot2","mot3","mot4","mot5"]},"remunere":{"synthese":"3 phrases personnalisees","mots_cles":["mot1","mot2","mot3","mot4","mot5"]},"passion":{"label":"Passion","spheres":"Aime + Done","analyse":"2 phrases","note":"ce qui manque"},"mission":{"label":"Mission","spheres":"Aime + Besoin","analyse":"2 phrases","note":"ce qui manque"},"vocation":{"label":"Vocation","spheres":"Done + Besoin","analyse":"2 phrases","note":"ce qui manque"},"profession":{"label":"Profession","spheres":"Done + Remunere","analyse":"2 phrases","note":"ce qui manque"},"ikigai":{"introduction":"phrase poetique","points":["point1","point2","point3"],"invitation":"invitation finale"}}`;
+Reponds UNIQUEMENT avec du JSON valide. Voici la structure exacte a respecter:
+{
+  "aime": {
+    "synthese": "3 phrases personnalisees sur ce que cette personne aime vraiment",
+    "mots_cles": ["mot1", "mot2", "mot3", "mot4", "mot5"]
+  },
+  "doue": {
+    "synthese": "3 phrases personnalisees sur ses vrais talents",
+    "mots_cles": ["mot1", "mot2", "mot3", "mot4", "mot5"]
+  },
+  "besoin": {
+    "synthese": "3 phrases personnalisees sur sa contribution possible au monde",
+    "mots_cles": ["mot1", "mot2", "mot3", "mot4", "mot5"]
+  },
+  "remunere": {
+    "synthese": "3 phrases personnalisees sur son potentiel economique",
+    "mots_cles": ["mot1", "mot2", "mot3", "mot4", "mot5"]
+  },
+  "passion": {
+    "label": "Passion",
+    "spheres": "Aime + Done",
+    "analyse": "2-3 phrases sur sa passion profonde",
+    "note": "Ce qui lui manque encore pour atteindre son ikigai"
+  },
+  "mission": {
+    "label": "Mission",
+    "spheres": "Aime + Besoin",
+    "analyse": "2-3 phrases sur sa mission de vie",
+    "note": "Ce qui lui manque encore pour atteindre son ikigai"
+  },
+  "vocation": {
+    "label": "Vocation",
+    "spheres": "Done + Besoin",
+    "analyse": "2-3 phrases sur sa vocation",
+    "note": "Ce qui lui manque encore pour atteindre son ikigai"
+  },
+  "profession": {
+    "label": "Profession",
+    "spheres": "Done + Remunere",
+    "analyse": "2-3 phrases sur son activite economique naturelle",
+    "note": "Ce qui lui manque encore pour atteindre son ikigai"
+  },
+  "ikigai": {
+    "introduction": "Une phrase poetique et profondement personnalisee qui capture l essence de cette personne",
+    "points": [
+      "Premier point de convergence tres concret et specifique",
+      "Deuxieme point de convergence concret et actionnable",
+      "Troisieme point de convergence avec une opportunite precise"
+    ],
+    "invitation": "Une invitation finale inspirante et personnelle en 2 phrases"
+  }
+}`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -29,21 +79,29 @@ JSON:
         model: 'claude-3-5-sonnet-20241022',
         max_tokens: 2000,
         messages: [
-          { role: 'user', content: prompt },
-          { role: 'assistant', content: '{' }
+          { role: 'user', content: prompt }
         ]
       })
     });
 
     const raw = await response.text();
-    if (!response.ok) return res.status(500).json({ error: raw.slice(0, 300) });
+
+    if (!response.ok) {
+      return res.status(500).json({ error: raw.slice(0, 300) });
+    }
 
     const data = JSON.parse(raw);
-    const text = '{' + (data.content?.[0]?.text || '');
+    const text = data.content?.[0]?.text || '';
+    const first = text.indexOf('{');
     const last = text.lastIndexOf('}');
-    if (last === -1) return res.status(500).json({ error: 'JSON invalide' });
 
-    return res.status(200).json(JSON.parse(text.slice(0, last + 1)));
+    if (first === -1 || last === -1) {
+      return res.status(500).json({ error: 'Reponse IA invalide', raw: text.slice(0, 200) });
+    }
+
+    const parsed = JSON.parse(text.slice(first, last + 1));
+    return res.status(200).json(parsed);
+
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
